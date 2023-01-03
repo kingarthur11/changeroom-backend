@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Service;
+use App\Models\Country;
 
 class Company extends Model
 {
@@ -31,10 +32,14 @@ class Company extends Model
         'country_id' => 'nullable|integer',
     ];
 
-    public function service(){
+    public function service()
+    {
         return $this->belongsTo(Service::class, 'service_id', 'id')->orderBy('created_at', 'DESC');
     }
-
+    public function country()
+    {
+        return $this->belongsTo(Service::class, 'country_id', 'id')->orderBy('created_at', 'DESC');
+    }
     // public function scopeCompany($query, $email)
     // {
     //     return $query->where('email', $email);

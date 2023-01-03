@@ -27,7 +27,7 @@ class CompanyAPIController extends AppBaseController
      * Display a listing of the Companies.
      * GET|HEAD /companies
      */
-    public function index(Request $request): JsonResponse
+    public function getCompany(Request $request): JsonResponse
     {
         $response = $this->companyRepository->getAllCompanies($request);
 
@@ -36,7 +36,21 @@ class CompanyAPIController extends AppBaseController
         } else {
             return $this->sendError($response['response_message'], $response['data']);
         }
+    }
 
+    /**
+     * Display a listing of the Companies.
+     * GET|HEAD /companies
+     */
+    public function getUserCompany(Request $request): JsonResponse
+    {
+        $response = $this->companyRepository->get_user_companies($request);
+
+        if ($response['status']) {
+            return $this->sendResponse($response['data'], $response['response_message']);
+        } else {
+            return $this->sendError($response['response_message'], $response['data']);
+        }
     }
 
     /**
@@ -66,17 +80,15 @@ class CompanyAPIController extends AppBaseController
         } else {
             return $this->sendError($response['response_message'], $response['data']);
         }
-
-        
     }
 
     /**
      * Update the specified Company in storage.
      * PUT/PATCH /companies/{id}
      */
-    public function update(UpdateCompanyAPIRequest $request): JsonResponse
+    public function update($company_id, UpdateCompanyAPIRequest $request): JsonResponse
     {
-        $response = $this->companyRepository->updateCompany($request);
+        $response = $this->companyRepository->updateCompany($request, $company_id);
         if ($response['status']) {
             return $this->sendResponse($response['data'], $response['response_message']);
         } else {

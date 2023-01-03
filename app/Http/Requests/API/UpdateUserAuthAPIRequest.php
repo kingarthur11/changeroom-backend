@@ -24,8 +24,13 @@ class UpdateUserAuthAPIRequest extends APIRequest
      */
     public function rules()
     {
-        $rules = User::$rules;
-        
+        $rules = [
+            'name' => 'nullable|string|max:100',
+            'email' => 'nullable|string|max:100',
+            'phone_number' => 'nullable|min:9|max:11',
+            'country_id' => 'nullable|integer|exists:countries,id',
+        ];
+
         return $rules;
     }
 }

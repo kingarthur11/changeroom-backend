@@ -37,7 +37,7 @@ class UserAuthAPIController extends AppBaseController
         return $this->sendResponse($userAuths->toArray(), 'User Auths retrieved successfully');
     }
 
-     /**
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -101,6 +101,21 @@ class UserAuthAPIController extends AppBaseController
     public function update(UpdateUserAuthAPIRequest $request): JsonResponse
     {
         $response = $this->userAuthRepository->updateUser($request);
+
+        if ($response['status']) {
+            return $this->sendResponse($response['data'], $response['response_message']);
+        } else {
+            return $this->sendError($response['response_message'], $response['data']);
+        }
+    }
+
+    /**
+     * Update the specified UserAuth in storage.
+     * PUT/PATCH /user-auths/{id}
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $response = $this->userAuthRepository->changePassword($request);
 
         if ($response['status']) {
             return $this->sendResponse($response['data'], $response['response_message']);

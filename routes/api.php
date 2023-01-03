@@ -21,15 +21,17 @@ Route::middleware('auth:user-api')->get('/user', function (Request $request) {
 
 Route::group(['middleware' => 'auth:user-api'], function () {
     Route::resource('companies', App\Http\Controllers\API\CompanyAPIController::class);
-
+    Route::get('/user/companies', 'CompanyAPIController@getUserCompany');
     Route::resource('services', App\Http\Controllers\API\ServiceAPIController::class);
 
     Route::resource('countries', App\Http\Controllers\API\CountryAPIController::class);
-
+    Route::post('reset_password', 'UserAuthAPIController@resetPassword');
     Route::resource('user-auths', App\Http\Controllers\API\UserAuthAPIController::class);
+    Route::put('user/update', 'UserAuthAPIController@update');
 });
 
-
-
+Route::get('countries', 'CountryAPIController@index');
+Route::get('services', 'ServiceAPIController@index');
+Route::get('companies', 'CompanyAPIController@getCompany');
 Route::post('register', 'UserAuthAPIController@register');
 Route::post('login', 'UserAuthAPIController@login');

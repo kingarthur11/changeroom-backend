@@ -18,11 +18,8 @@ class UserAuthRepository extends BaseRepository
     public function __construct(Application $app)
     {
         $this->app = $app;
-
     }
-    protected $fieldSearchable = [
-        
-    ];
+    protected $fieldSearchable = [];
 
     public function getFieldsSearchable(): array
     {
@@ -40,8 +37,6 @@ class UserAuthRepository extends BaseRepository
         if ($user_exist) {
             return ['status' => false, 'response_message' => 'Email or phone number record already exist', 'data' => 'Email or phone number record already exist'];
         }
-
-       
         try {
 
             $data = $this->createUser($request);
@@ -58,7 +53,7 @@ class UserAuthRepository extends BaseRepository
      */
     public function createUser($request)
     {
-       
+
         $user = User::create([
             'name' =>  $request->name,
             'email' =>  $request->email,
@@ -66,7 +61,7 @@ class UserAuthRepository extends BaseRepository
             'phone_number' =>  $request->phone_number,
             'country_id' =>  $request->country_id,
         ]);
-       
+
         return $user;
     }
 
@@ -89,7 +84,7 @@ class UserAuthRepository extends BaseRepository
             $response['success'] = 'Successfully logged in';
             $response["user"] = User::findOrFail(auth()->guard('user')->user()->id);
 
-            $oClient = OClient::where( ['password_client'=> 1, 'provider' => 'users'])->latest()->first();
+            $oClient = OClient::where(['password_client' => 1, 'provider' => 'users'])->latest()->first();
 
             $body = [
                 'grant_type' => 'password',
@@ -99,31 +94,32 @@ class UserAuthRepository extends BaseRepository
                 'password' => request('password'),
                 'scope' => '*'
             ];
-            
+
             $request = Request::create('/oauth/token', 'POST', $body);
             $result = $this->app->handle($request);
-            
+
             $result = json_decode($result->getContent(), true);
             $response['token'] = $result['access_token'];
             $response['refresh_token'] = $result['refresh_token'];
 
             return ['status' => true, 'response_message' => 'User signed in successfuly, ', 'data' => $response];
-        }else{
+        } else {
             return ['status' => false, 'response_message' => 'Unauthorised user, email or password credentials incorrect', 'data' => 'Unauthorised user, email or password credentials incorrect'];
         }
-
     }
 
-    public function validateLogin($request) {
-        $validateUser = Validator::make($request->all(), 
+    public function validateLogin($request)
+    {
+        $validateUser = Validator::make(
+            $request->all(),
             [
                 'email' => 'required|string',
-            ]);
+            ]
+        );
 
-        if($validateUser->fails()){
+        if ($validateUser->fails()) {
             return ['status' => false, 'response_message' => 'validation error', 'data' => $validateUser->errors()];
         }
-
     }
 
     public function updateUser($request)
@@ -131,44 +127,58 @@ class UserAuthRepository extends BaseRepository
         $user_auth = Auth::user();
 
         $success = $this->update_user($request, $user_auth->id);
-        if(!$success) {
+
+        if (!$success) {
             return ['status' => false, 'response_message' => 'Update was not successful', 'data' => 'Update was not successful'];
         }
-        
-        return ['status' => true, 'response_message' => 'Updated successfully' ];
-        
+        return ['status' => true, 'response_message' => 'Updated successfully', 'data' => $success];
     }
 
     public function update_user($request, $user_id)
     {
-        User::where('id', $user_id)->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone_number' => $request->phone_number,
-          ]);
+        try {
+            DB::beginTransaction();
+            User::where('id', $user_id)->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'country_id' => $request->country_id,
+            ]);
+
+            $userAuth = User::find($user_id);
+            DB::commit();
+
+            return $userAuth;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            logger('error' . $e->getMessage() . ' =>>>>' . $e->getTraceAsString());
+            return ['status' => false, 'response_message' => 'Update was not successful', 'data' => 'Update was not successful'];
+        }
     }
 
-    public function changePassword($request) {
+    public function changePassword($request)
+    {
         $input = $request->all();
         $validation = Validator::make($input, [
-            'old_password' => 'required|min:8',
+            'old_password' => 'required',
             'password' => 'required|min:8',
             'password_confirmation' => 'required|same:password',
         ]);
 
-        if($validation->fails()){
+        if ($validation->fails()) {
             return ['status' => false, 'response_message' => 'validation error', 'data' => $validation->errors()];
         }
 
         $user_auth = Auth::user();
 
-        if(Hash::check($input['old_password'], $user_auth->password)){
+        if (Hash::check($input['old_password'], $user_auth->password)) {
             $input['password'] = Hash::make($input['password']);
             User::where('id', $user_auth->id)->update([
                 'password' => $input['password'],
-              ]);
-
-            return ['status' => true, 'response_message' => 'Password updated successfully' ];
+            ]);
+            return ['status' => true, 'response_message' => 'Password updated successfully', 'data' => 'Password updated successfully'];
         }
+
+        return ['status' => true, 'response_message' => 'Incorrect old password', 'data' => 'Incorrect old password'];
     }
 }
